@@ -400,7 +400,11 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 const platform_1 = __importDefault(__nccwpck_require__(9707));
 class ImageTag {
     constructor(imageProperties) {
-        const { editorVersion = '2022.3.7f1', targetPlatform = ImageTag.getImagePlatformType(process.platform), customImage, containerRegistryRepository, containerRegistryImageVersion, } = imageProperties;
+        const { editorVersion = '2022.3.7f1', customImage, containerRegistryRepository, containerRegistryImageVersion, } = imageProperties;
+
+        // Hardcode the target platform to Android
+        const targetPlatform = platform_1.default.types.Android;
+        
         if (!ImageTag.versionPattern.test(editorVersion)) {
             throw new Error(`Invalid version "${editorVersion}".`);
         }
