@@ -59,6 +59,10 @@ elif [[ -n "$UNITY_LICENSING_SERVER" ]]; then
   echo "Adding licensing server config"
 
   /opt/unity/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client --acquire-floating > license.txt #is this accessible in a env variable?
+  echo "--- License file ---"
+  cat license.txt
+  echo "--------------------"
+
   UNITY_EXIT_CODE=$?
   PARSEDFILE=$(grep -oP '\".*?\"' < license.txt | tr -d '"')
   export FLOATING_LICENSE
