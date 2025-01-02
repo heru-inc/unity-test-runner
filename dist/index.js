@@ -201,6 +201,9 @@ const Docker = {
                 return;
             }
             const container = (0, fs_1.readFileSync)(cidfile, 'ascii').trim();
+            yield (0, exec_1.exec)('docker', ['exec', container, '/bin/bash', '-c', '/steps/cleanup.sh'], {
+                silent: true,
+            });
             yield (0, exec_1.exec)(`docker`, ['rm', '--force', '--volumes', container], { silent: true });
             (0, fs_1.rmSync)(cidfile);
         });
@@ -1016,7 +1019,7 @@ const ResultsCheck = {
                 core.info(`Processing file ${filepath}...`);
                 try {
                     const content = fs.readFileSync(path_1.default.join(artifactsPath, filepath), 'utf8');
-                    if (!content.includes('<test-results') && !content.includes('<test-run')) {
+                    if (!content.includes('<test-run')) {
                         // noinspection ExceptionCaughtLocallyJS
                         throw new Error('File does not appear to be a NUnit XML file');
                     }
