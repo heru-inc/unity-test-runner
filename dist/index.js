@@ -202,7 +202,7 @@ const Docker = {
             }
             const container = (0, fs_1.readFileSync)(cidfile, 'ascii').trim();
             yield (0, exec_1.exec)('docker', ['exec', container, '/bin/bash', '-c', '/steps/cleanup.sh'], {
-                silent: true,
+                silent: false,
             });
             yield (0, exec_1.exec)(`docker`, ['rm', '--force', '--volumes', container], { silent: true });
             (0, fs_1.rmSync)(cidfile);
