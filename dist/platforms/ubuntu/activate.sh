@@ -104,9 +104,7 @@ elif [[ -n "$UNITY_LICENSING_SERVER" ]]; then
 
     if [[ $FLOATING_LICENSE_FOUND_EXIT_CODE -ne 0 ]]
     then
-      echo "Failed to extract floating license from activation output, full output:"
-      echo "$activation_output"
-      echo "---"
+      echo "Failed to extract floating license from activation output"
       UNITY_EXIT_CODE=$FLOATING_LICENSE_FOUND_EXIT_CODE
     else
       echo "Floating license acquired: \"$FLOATING_LICENSE\""
