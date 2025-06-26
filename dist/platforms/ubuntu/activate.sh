@@ -76,8 +76,8 @@ elif [[ -n "$UNITY_LICENSING_SERVER" ]]; then
     echo "$activation_output"
     echo "---------------------------------------"
 
-    # Check if UNITY_EXIT_CODE is 0 AND activation_output contains the phrase "Expires"
-    if [[ $UNITY_EXIT_CODE -eq 0 && $activation_output == *"Expires"* ]]
+    # Check if UNITY_EXIT_CODE is 0 AND activation_output has a UUID
+    if [[ $UNITY_EXIT_CODE -eq 0 && "$activation_output" =~ [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} ]]
     then
       echo "Activation successful"
       break
