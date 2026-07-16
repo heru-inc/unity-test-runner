@@ -182,6 +182,42 @@ echo ""
 ls -alh "$UNITY_PROJECT_PATH"
 
 #
+# Warm up the project when an active build profile is provided
+#
+# The first editor session to activate a build profile may re-serialize the
+# profile asset and request a script recompile for the profile's scripting
+# defines. If that state change lands inside a test session, the Test Framework
+# defers the recompile until the run ends, EditorApplication.isCompiling stays
+# true for the entire run, and tests that rely on the editor player loop being
+# pumped (e.g. UniTask delays) hang until their timeout. Run a throwaway -quit
+# session first so activation and recompilation settle before any tests start.
+#
+
+if [[ "$CUSTOM_PARAMETERS" == *"-activeBuildProfile"* ]]; then
+  echo ""
+  echo "###########################"
+  echo "#  Build profile warm-up  #"
+  echo "###########################"
+  echo ""
+
+  unity-editor \
+    -batchmode \
+    -logFile "$FULL_ARTIFACTS_PATH/warmup.log" \
+    -projectPath "$UNITY_PROJECT_PATH" \
+    -quit \
+    "${CUSTOM_PARAMETERS_ARRAY[@]}"
+
+  WARMUP_EXIT_CODE=$?
+
+  if [[ $WARMUP_EXIT_CODE -eq 0 ]]; then
+    echo "Build profile warm-up succeeded."
+  else
+    echo "::warning ::Build profile warm-up exited with code $WARMUP_EXIT_CODE; continuing with tests. Log tail:"
+    tail -n 100 "$FULL_ARTIFACTS_PATH/warmup.log"
+  fi
+fi
+
+#
 # Testing for each platform
 #
 for platform in ${TEST_PLATFORMS//;/ }; do
