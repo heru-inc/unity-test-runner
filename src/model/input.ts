@@ -92,6 +92,7 @@ class Input {
     const unityLicense = getInput('unityLicense') || (process.env['UNITY_LICENSE'] ?? '');
     let unitySerial = process.env['UNITY_SERIAL'] ?? '';
     const customParameters = getInput('customParameters') || '';
+    const buildProfile = getInput('buildProfile') || '';
     const testMode = (getInput('testMode') || 'all').toLowerCase();
     const coverageOptions = getInput('coverageOptions') || '';
     const rawArtifactsPath = getInput('artifactsPath') || 'artifacts';
@@ -223,6 +224,7 @@ class Input {
       customImage,
       projectPath,
       customParameters,
+      buildProfile,
       testMode,
       coverageOptions,
       artifactsPath,

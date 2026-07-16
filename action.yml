@@ -16,6 +16,10 @@ inputs:
   customParameters:
     required: false
     description: 'Extra parameters to configure the Unity editor run.'
+  buildProfile:
+    required: false
+    default: ''
+    description: 'Path to the build profile to activate for the test run, relative to the project root.'
   testMode:
     required: false
     default: 'all'

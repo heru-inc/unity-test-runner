@@ -27,6 +27,16 @@ FULL_COVERAGE_RESULTS_PATH=$GITHUB_WORKSPACE/$COVERAGE_RESULTS_PATH
 
 echo "Using custom parameters $CUSTOM_PARAMETERS."
 
+#
+# Display the build profile
+#
+
+if [[ -z "$BUILD_PROFILE" ]]; then
+  echo "No build profile provided; using the project's default build settings."
+else
+  echo "Using build profile \"$BUILD_PROFILE\" relative to \"$UNITY_PROJECT_PATH\"."
+fi
+
 # The following tests are 2019 mode (requires Unity 2019.2.11f1 or later)
 # Reference: https://docs.unity3d.com/2019.3/Documentation/Manual/CommandLineArguments.html
 
@@ -171,6 +181,43 @@ echo ""
 ls -alh "$UNITY_PROJECT_PATH"
 
 #
+# Warm up the project when a build profile is provided
+#
+# The first editor session to activate a build profile may re-serialize the
+# profile asset and request a script recompile for the profile's scripting
+# defines. If that state change lands inside a test session, the Test Framework
+# defers the recompile until the run ends, EditorApplication.isCompiling stays
+# true for the entire run, and tests that rely on the editor player loop being
+# pumped (e.g. UniTask delays) hang until their timeout. Run a throwaway -quit
+# session first so activation and recompilation settle before any tests start.
+#
+
+if [[ -n "$BUILD_PROFILE" ]]; then
+  echo ""
+  echo "###########################"
+  echo "#  Build profile warm-up  #"
+  echo "###########################"
+  echo ""
+
+  unity-editor \
+    -batchmode \
+    -logFile "$FULL_ARTIFACTS_PATH/warmup.log" \
+    -projectPath "$UNITY_PROJECT_PATH" \
+    -quit \
+    -activeBuildProfile "$BUILD_PROFILE" \
+    $CUSTOM_PARAMETERS
+
+  WARMUP_EXIT_CODE=$?
+
+  if [[ $WARMUP_EXIT_CODE -eq 0 ]]; then
+    echo "Build profile warm-up succeeded."
+  else
+    echo "::warning ::Build profile warm-up exited with code $WARMUP_EXIT_CODE; continuing with tests. Log tail:"
+    tail -n 100 "$FULL_ARTIFACTS_PATH/warmup.log"
+  fi
+fi
+
+#
 # Testing for each platform
 #
 for platform in ${TEST_PLATFORMS//;/ }; do
@@ -215,6 +262,7 @@ for platform in ${TEST_PLATFORMS//;/ }; do
     -enableCodeCoverage \
     -debugCodeOptimization \
     -coverageOptions "$COVERAGE_OPTIONS" \
+    ${BUILD_PROFILE:+-activeBuildProfile} ${BUILD_PROFILE:+"$BUILD_PROFILE"} \
     $CUSTOM_PARAMETERS
 
   # Catch exit code
