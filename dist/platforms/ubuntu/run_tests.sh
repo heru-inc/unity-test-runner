@@ -27,6 +27,17 @@ FULL_COVERAGE_RESULTS_PATH=$GITHUB_WORKSPACE/$COVERAGE_RESULTS_PATH
 
 echo "Using custom parameters $CUSTOM_PARAMETERS."
 
+# Parse CUSTOM_PARAMETERS into an array so that quoted values containing spaces
+# (for example: -activeBuildProfile "Assets/Settings/Build Profiles/Tests CICD.asset")
+# are passed to Unity as a single argument. Unquoted, space-separated flags are
+# still split into separate arguments, preserving the previous behaviour.
+CUSTOM_PARAMETERS_ARRAY=()
+if [[ -n "$CUSTOM_PARAMETERS" ]]; then
+  while IFS= read -r -d '' custom_parameter; do
+    CUSTOM_PARAMETERS_ARRAY+=("$custom_parameter")
+  done < <(xargs printf '%s\0' <<< "$CUSTOM_PARAMETERS")
+fi
+
 # The following tests are 2019 mode (requires Unity 2019.2.11f1 or later)
 # Reference: https://docs.unity3d.com/2019.3/Documentation/Manual/CommandLineArguments.html
 
@@ -215,7 +226,7 @@ for platform in ${TEST_PLATFORMS//;/ }; do
     -enableCodeCoverage \
     -debugCodeOptimization \
     -coverageOptions "$COVERAGE_OPTIONS" \
-    $CUSTOM_PARAMETERS
+    "${CUSTOM_PARAMETERS_ARRAY[@]}"
 
   # Catch exit code
   TEST_EXIT_CODE=$?

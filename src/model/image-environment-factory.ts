@@ -6,7 +6,14 @@ class ImageEnvironmentFactory {
       if (p.value === '' || p.value === undefined) {
         continue;
       }
-      if (p.name !== 'ANDROID_KEYSTORE_BASE64' && p.value.toString().includes(`\n`)) {
+      // Values containing a newline or a double quote cannot be safely inlined as
+      // --env NAME="value" in the docker command string (they would break the
+      // command tokenization). Pass those through by name instead, so docker
+      // inherits the value verbatim from the environment.
+      if (
+        p.name !== 'ANDROID_KEYSTORE_BASE64' &&
+        (p.value.toString().includes(`\n`) || p.value.toString().includes(`"`))
+      ) {
         string += `--env ${p.name} `;
         process.env[p.name] = p.value.toString();
         continue;
