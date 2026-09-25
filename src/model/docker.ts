@@ -18,6 +18,18 @@ const containerIdFilePath = (parameters) => {
 
 const Docker = {
   /**
+   * The platforms run_tests iterates over, joined with ';'. COMBINE_RESULTS is an extra Unity
+   * launch that only merges the playmode and editmode coverage, so it is skipped without coverage.
+   */
+  getTestPlatforms(testMode: string, coverageOptions: string): string {
+    if (testMode !== 'all') return testMode;
+
+    return (
+      coverageOptions ? ['playmode', 'editmode', 'COMBINE_RESULTS'] : ['playmode', 'editmode']
+    ).join(';');
+  },
+
+  /**
    *  Remove a possible leftover container created by `Docker.run`.
    */
   async ensureContainerRemoval(parameters: RunnerContext) {
@@ -60,6 +72,7 @@ const Docker = {
       actionFolder,
       workspace,
       testMode,
+      coverageOptions,
       useHostNetwork,
       sshAgent,
       sshPublicKeysDirectoryPath,
@@ -74,9 +87,7 @@ const Docker = {
     const githubWorkflow = path.join(runnerTemporaryPath, '_github_workflow');
     if (!existsSync(githubWorkflow)) mkdirSync(githubWorkflow);
     const cidfile = containerIdFilePath(parameters);
-    const testPlatforms = (
-      testMode === 'all' ? ['playmode', 'editmode', 'COMBINE_RESULTS'] : [testMode]
-    ).join(';');
+    const testPlatforms = Docker.getTestPlatforms(testMode, coverageOptions);
 
     return `docker run \
             --workdir /github/workspace \
@@ -118,6 +129,7 @@ const Docker = {
       actionFolder,
       workspace,
       testMode,
+      coverageOptions,
       useHostNetwork,
       sshAgent,
       githubToken,
@@ -132,9 +144,7 @@ const Docker = {
     const cidfile = containerIdFilePath(parameters);
     const githubWorkflow = path.join(runnerTemporaryPath, '_github_workflow');
     if (!existsSync(githubWorkflow)) mkdirSync(githubWorkflow);
-    const testPlatforms = (
-      testMode === 'all' ? ['playmode', 'editmode', 'COMBINE_RESULTS'] : [testMode]
-    ).join(';');
+    const testPlatforms = Docker.getTestPlatforms(testMode, coverageOptions);
 
     return `docker run \
                 --workdir c:/github/workspace \
