@@ -199,12 +199,20 @@ if [[ -n "$BUILD_PROFILE" ]]; then
   echo "###########################"
   echo ""
 
+  # Test launches with coverage compile scripts in debug. Compile the same way here so the first
+  # test launch doesn't recompile everything.
+  warmupCoverageArgs=()
+  if [[ -n "$COVERAGE_OPTIONS" ]]; then
+    warmupCoverageArgs=(-debugCodeOptimization)
+  fi
+
   unity-editor \
     -batchmode \
     -logFile "$FULL_ARTIFACTS_PATH/warmup.log" \
     -projectPath "$UNITY_PROJECT_PATH" \
     -quit \
     -activeBuildProfile "$BUILD_PROFILE" \
+    "${warmupCoverageArgs[@]}" \
     $CUSTOM_PARAMETERS
 
   WARMUP_EXIT_CODE=$?
@@ -253,15 +261,23 @@ for platform in ${TEST_PLATFORMS//;/ }; do
     fi
   fi
 
+  # Code coverage is opt-out: an empty coverageOptions input skips it entirely.
+  coverageArgs=()
+  if [[ -n "$COVERAGE_OPTIONS" ]]; then
+    coverageArgs=(
+      -coverageResultsPath "$FULL_COVERAGE_RESULTS_PATH"
+      -enableCodeCoverage
+      -debugCodeOptimization
+      -coverageOptions "$COVERAGE_OPTIONS"
+    )
+  fi
+
   unity-editor \
     -batchmode \
     -logFile "$FULL_ARTIFACTS_PATH/$platform.log" \
     -projectPath "$UNITY_PROJECT_PATH" \
-    -coverageResultsPath "$FULL_COVERAGE_RESULTS_PATH" \
     $runTests \
-    -enableCodeCoverage \
-    -debugCodeOptimization \
-    -coverageOptions "$COVERAGE_OPTIONS" \
+    "${coverageArgs[@]}" \
     ${BUILD_PROFILE:+-activeBuildProfile} ${BUILD_PROFILE:+"$BUILD_PROFILE"} \
     $CUSTOM_PARAMETERS
 
@@ -329,7 +345,9 @@ done
 if [[ -n "$CHOWN_FILES_TO" ]]; then
   chown -R "$CHOWN_FILES_TO" "$UNITY_PROJECT_PATH"
   chown -R "$CHOWN_FILES_TO" "$FULL_ARTIFACTS_PATH"
-  chown -R "$CHOWN_FILES_TO" "$FULL_COVERAGE_RESULTS_PATH"
+  if [ -d "$FULL_COVERAGE_RESULTS_PATH" ]; then
+    chown -R "$CHOWN_FILES_TO" "$FULL_COVERAGE_RESULTS_PATH"
+  fi
 fi
 
 # Add read permissions for everyone to all artifacts
@@ -339,6 +357,6 @@ chmod -R a+r "$FULL_ARTIFACTS_PATH"
 # Check if coverage results directory exists
 if [ -d "$FULL_COVERAGE_RESULTS_PATH" ]; then
   chmod -R a+r "$FULL_COVERAGE_RESULTS_PATH"
-else
+elif [[ -n "$COVERAGE_OPTIONS" ]]; then
   echo "Coverage results directory does not exist. If you are expecting coverage results, please make sure the Code Coverage package is installed in your unity project and that it is set up correctly."
 fi

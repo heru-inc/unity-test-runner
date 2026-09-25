@@ -184,6 +184,15 @@ const containerIdFilePath = (parameters) => {
 };
 const Docker = {
     /**
+     * The platforms run_tests iterates over, joined with ';'. COMBINE_RESULTS is an extra Unity
+     * launch that only merges the playmode and editmode coverage, so it is skipped without coverage.
+     */
+    getTestPlatforms(testMode, coverageOptions) {
+        if (testMode !== 'all')
+            return testMode;
+        return (coverageOptions ? ['playmode', 'editmode', 'COMBINE_RESULTS'] : ['playmode', 'editmode']).join(';');
+    },
+    /**
      *  Remove a possible leftover container created by `Docker.run`.
      */
     async ensureContainerRemoval(parameters) {
@@ -216,7 +225,7 @@ const Docker = {
         await (0, exec_1.exec)(runCommand, undefined, { silent });
     },
     getLinuxCommand(image, parameters) {
-        const { actionFolder, workspace, testMode, useHostNetwork, sshAgent, sshPublicKeysDirectoryPath, githubToken, runnerTemporaryPath, dockerCpuLimit, dockerMemoryLimit, } = parameters;
+        const { actionFolder, workspace, testMode, coverageOptions, useHostNetwork, sshAgent, sshPublicKeysDirectoryPath, githubToken, runnerTemporaryPath, dockerCpuLimit, dockerMemoryLimit, } = parameters;
         const githubHome = path_1.default.join(runnerTemporaryPath, '_github_home');
         if (!(0, fs_1.existsSync)(githubHome))
             (0, fs_1.mkdirSync)(githubHome);
@@ -224,7 +233,7 @@ const Docker = {
         if (!(0, fs_1.existsSync)(githubWorkflow))
             (0, fs_1.mkdirSync)(githubWorkflow);
         const cidfile = containerIdFilePath(parameters);
-        const testPlatforms = (testMode === 'all' ? ['playmode', 'editmode', 'COMBINE_RESULTS'] : [testMode]).join(';');
+        const testPlatforms = Docker.getTestPlatforms(testMode, coverageOptions);
         return `docker run \
             --workdir /github/workspace \
             --cidfile "${cidfile}" \
@@ -256,7 +265,7 @@ const Docker = {
             /bin/bash -c "/steps/entrypoint.sh`;
     },
     getWindowsCommand(image, parameters) {
-        const { actionFolder, workspace, testMode, useHostNetwork, sshAgent, githubToken, runnerTemporaryPath, dockerCpuLimit, dockerMemoryLimit, dockerIsolationMode, } = parameters;
+        const { actionFolder, workspace, testMode, coverageOptions, useHostNetwork, sshAgent, githubToken, runnerTemporaryPath, dockerCpuLimit, dockerMemoryLimit, dockerIsolationMode, } = parameters;
         const githubHome = path_1.default.join(runnerTemporaryPath, '_github_home');
         if (!(0, fs_1.existsSync)(githubHome))
             (0, fs_1.mkdirSync)(githubHome);
@@ -264,7 +273,7 @@ const Docker = {
         const githubWorkflow = path_1.default.join(runnerTemporaryPath, '_github_workflow');
         if (!(0, fs_1.existsSync)(githubWorkflow))
             (0, fs_1.mkdirSync)(githubWorkflow);
-        const testPlatforms = (testMode === 'all' ? ['playmode', 'editmode', 'COMBINE_RESULTS'] : [testMode]).join(';');
+        const testPlatforms = Docker.getTestPlatforms(testMode, coverageOptions);
         return `docker run \
                 --workdir c:/github/workspace \
                 --cidfile "${cidfile}" \

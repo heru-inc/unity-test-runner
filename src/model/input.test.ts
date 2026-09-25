@@ -29,6 +29,16 @@ describe('Input', () => {
     it('returns an object', () => {
       expect(typeof Input.getFromUser()).toStrictEqual('object');
     });
+
+    it('passes coverageOptions through', () => {
+      process.env = { ...process.env, INPUT_COVERAGEOPTIONS: 'generateHtmlReport' };
+      expect(Input.getFromUser().coverageOptions).toStrictEqual('generateHtmlReport');
+    });
+
+    it('returns an empty coverageOptions when the input is empty', () => {
+      process.env = { ...process.env, INPUT_COVERAGEOPTIONS: '' };
+      expect(Input.getFromUser().coverageOptions).toStrictEqual('');
+    });
   });
 
   describe('isValidFolderName', () => {
