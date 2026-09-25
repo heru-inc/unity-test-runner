@@ -113,6 +113,22 @@ elif [[ -n "$UNITY_LICENSING_SERVER" ]]; then
     else
       echo "Floating license acquired: \"$FLOATING_LICENSE\""
       echo -n "$FLOATING_LICENSE" > /floating_license.txt
+
+      # Start the licensing client the editor will use now, instead of letting the editor launch it.
+      # Licensing Client 1.17.1 answers the editor's handshake before its startup license load
+      # releases the resolver lock, and the editor's first UpdateLicense tries that lock with a 0 ms
+      # timeout. When it loses, the lease is never loaded and the editor runs without
+      # com.unity.editor.headless: Android is gated and the build fails with "Active build profile
+      # is null". With the client already running and settled, the editor attaches to it and the
+      # race can't happen. If it never reports ready, the editor launches its own as before.
+      /opt/unity/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client \
+        --namedPipe "Unity-LicenseClient-$(id -un)" > /dev/null 2>&1 &
+      for _ in $(seq 1 60); do
+        grep -aqs "Named pipe server started" "$HOME/.config/unity3d/Unity/Unity.Licensing.Client.log" && break
+        sleep 0.5
+      done
+      sleep 3
+      echo "Licensing client started ahead of the editor"
     fi
   fi
 
